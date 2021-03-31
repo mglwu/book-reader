@@ -20,6 +20,8 @@
       @setTheme="setTheme"
       :bookAvailable="bookAvailable"
       @onProgressChange="onProgressChange"
+      :navigation="navigation"
+      @jumpTo="jumpTo"
     />
   </div>
 </template>
@@ -89,10 +91,17 @@ export default {
         }
       ],
       defaultTheme: 0,
-      bookAvailable: false
+      bookAvailable: false,
+
+      navigation: {}
     }
   },
   methods: {
+    jumpTo(href) {
+      this.rendition.display(href)
+      this.hideTitleAndMenu()
+    },
+
     onProgressChange(progress) {
       const percentage = progress / 100
       const location = percentage > 0 ? this.locations.cfiFromPercentage(percentage) : 0
@@ -106,7 +115,7 @@ export default {
       }
     },
     registerTheme() {
-      this.themeList.forEach(theme => {
+      this.themeList.forEach((theme) => {
         this.themes.register(theme.name, theme.style)
       })
     },
@@ -122,19 +131,21 @@ export default {
       // 通过 Rendition
       this.rendition.display()
 
-
       this.themes = this.rendition.themes
       this.setFontSize(this.defaultFontSize)
 
       this.registerTheme()
       this.setTheme(this.defaultTheme)
 
-      this.book.ready.then(() => {
-        return this.book.locations.generate()
-      }).then(result => {
-        this.locations = this.book.locations
-        this.bookAvailable = true
-      })
+      this.book.ready
+        .then(() => {
+          this.navigation = this.book.navigation
+          return this.book.locations.generate()
+        })
+        .then((result) => {
+          this.locations = this.book.locations
+          this.bookAvailable = true
+        })
     },
     prevPage() {
       if (this.rendition) {
@@ -151,6 +162,11 @@ export default {
       if (!this.ifTitleAndMenuShow) {
         this.$refs.menuBar.hideSetting()
       }
+    },
+    hideTitleAndMenu() {
+      this.ifTitleAndMenuShow = false
+      this.$refs.menuBar.hideSetting()
+      this.$refs.menuBar.hideContent()
     },
     setFontSize(fontSize) {
       this.defaultFontSize = fontSize

@@ -6,7 +6,7 @@
         class="menu-wrapper"
         :class="{ 'hide-box-shadow': ifSettingShow || !ifTitleAndMenuShow }"
       >
-        <div class="icon-wrapper">
+        <div class="icon-wrapper" @click="showSetting(3)">
           <span class="icon-menu icon"></span>
         </div>
         <div class="icon-wrapper" @click="showSetting(2)">
@@ -78,12 +78,25 @@
         </div>
       </div>
     </transition>
+    <ContentView 
+      :ifShowContent="ifShowContent"
+      v-show="ifShowContent"
+      :navigation="navigation"
+      :bookAvailable="bookAvailable"
+      @jumpTo="jumpTo"
+    />
+    <transition name="fade">
+      <div class="content-mask" v-show="ifShowContent" @click="hideContent"></div>
+    </transition>
   </div>
 </template>
 
 <script>
+import ContentView from './Content'
+
 export default {
   name: 'MenuBar',
+  components: { ContentView },
   props: {
     ifTitleAndMenuShow: {
       type: Boolean,
@@ -93,13 +106,15 @@ export default {
     defaultFontSize: Number,
     themeList: Array,
     defaultTheme: Number,
-    bookAvailable: Boolean
+    bookAvailable: Boolean,
+    navigation: Object
   },
   data() {
     return {
       ifSettingShow: false,
       showTag: 0,
-      progress: 0
+      progress: 0,
+      ifShowContent: false
     }
   },
   computed: {
@@ -116,6 +131,12 @@ export default {
     }
   },
   methods: {
+    jumpTo(href) {
+      this.$emit('jumpTo', href)
+    },
+    hideContent() {
+      this.ifShowContent = false
+    },
     onProgressInput(progress) {
       this.progress = progress
       this.$refs.progress.style.backgroundSize = `${this.progress}% 100%`
@@ -130,8 +151,13 @@ export default {
       this.$emit('setFontSize', fontSize)
     },
     showSetting(tag) {
-      this.ifSettingShow = true
       this.showTag = tag
+      if (this.showTag === 3) {
+        this.ifShowContent = true
+        this.ifSettingShow = false
+      } else {
+        this.ifSettingShow = true
+      }
     },
     hideSetting() {
       this.ifSettingShow = false
@@ -301,6 +327,16 @@ export default {
         text-align: center;
       }
     }
+  }
+  .content-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 101;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(51, 51, 51, 0.8);
   }
 }
 </style>
