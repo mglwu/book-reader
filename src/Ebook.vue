@@ -9,7 +9,18 @@
         <div class="right" @click="nextPage"></div>
       </div>
     </div>
-    <MenuBar ref="menuBar" :ifTitleAndMenuShow="ifTitleAndMenuShow" :fontSizeList="fontSizeList" :defaultFontSize="defaultFontSize" @setFontSize="setFontSize" />
+    <MenuBar
+      ref="menuBar"
+      :ifTitleAndMenuShow="ifTitleAndMenuShow"
+      :fontSizeList="fontSizeList"
+      :defaultFontSize="defaultFontSize"
+      @setFontSize="setFontSize"
+      :themeList="themeList"
+      :defaultTheme="defaultTheme"
+      @setTheme="setTheme"
+      :bookAvailable="bookAvailable"
+      @onProgressChange="onProgressChange"
+    />
   </div>
 </template>
 
@@ -38,10 +49,67 @@ export default {
         { fontSize: 22 },
         { fontSize: 24 }
       ],
-      defaultFontSize: 16
+      defaultFontSize: 16,
+      themeList: [
+        {
+          name: 'default',
+          style: {
+            body: {
+              color: '#000',
+              background: '#fff'
+            }
+          }
+        },
+        {
+          name: 'eye',
+          style: {
+            body: {
+              color: '#000',
+              background: '#ceeaba'
+            }
+          }
+        },
+        {
+          name: 'night',
+          style: {
+            body: {
+              color: '#fff',
+              background: '#000'
+            }
+          }
+        },
+        {
+          name: 'gold',
+          style: {
+            body: {
+              color: '#000',
+              background: 'rgb(241, 236, 226)'
+            }
+          }
+        }
+      ],
+      defaultTheme: 0,
+      bookAvailable: false
     }
   },
   methods: {
+    onProgressChange(progress) {
+      const percentage = progress / 100
+      const location = percentage > 0 ? this.locations.cfiFromPercentage(percentage) : 0
+      this.rendition.display(location)
+    },
+
+    setTheme(index) {
+      this.defaultTheme = index
+      if (this.themes) {
+        this.themes.select(this.themeList[index].name)
+      }
+    },
+    registerTheme() {
+      this.themeList.forEach(theme => {
+        this.themes.register(theme.name, theme.style)
+      })
+    },
     // 电子书的解析和渲染
     showEpub() {
       // 生成 Book
@@ -54,9 +122,19 @@ export default {
       // 通过 Rendition
       this.rendition.display()
 
-      this.themes = this.rendition.themes
 
-      this.themes.fontSize(this.defaultFontSize + 'px')
+      this.themes = this.rendition.themes
+      this.setFontSize(this.defaultFontSize)
+
+      this.registerTheme()
+      this.setTheme(this.defaultTheme)
+
+      this.book.ready.then(() => {
+        return this.book.locations.generate()
+      }).then(result => {
+        this.locations = this.book.locations
+        this.bookAvailable = true
+      })
     },
     prevPage() {
       if (this.rendition) {
